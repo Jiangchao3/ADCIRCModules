@@ -13,6 +13,7 @@ struct _inputOptions {
   std::string subdomain;
   std::string output;
   std::string outputMesh;
+  int chunkSize;
   _inputOptions()
       : mesh(std::string()),
         global(std::string()),
@@ -34,7 +35,7 @@ int generateSubdomain(const std::string &meshFile,
 
 int generateSubdomainOutput(Adcirc::Geometry::Mesh &subdomainMesh,
                             std::vector<size_t> translation_table,
-                            const std::string &globalOutputFile,
+                            int chunksize, const std::string &globalOutputFile,
                             const std::string &subdomainOutputFile);
 
 Adcirc::Output::OutputRecord *subsetRecord(
@@ -49,7 +50,8 @@ int main(int argc, char *argv[]) {
                      ("global","specify the global ADCIRC output",cxxopts::value<std::string>())
                      ("subdomain", "specify the template mesh containing the subdomain",cxxopts::value<std::string>())
                      ("output", "specify the output file to be created",cxxopts::value<std::string>())
-                     ("outputMesh", "specify the output mesh file to be created",cxxopts::value<std::string>());
+                     ("outputMesh", "specify the output mesh file to be created",cxxopts::value<std::string>())
+                     ("chunksize","specify the chunk size of records to read/write at once",cxxopts::value<int>());
   // clang-format on
 
   if (argc == 1) {
@@ -80,8 +82,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  ierr = generateSubdomainOutput(subdomain, translation, input.global,
-                                 input.output);
+  ierr = generateSubdomainOutput(subdomain, translation, input.chunkSize,
+                                 input.global, input.output);
 
   return 0;
 }
@@ -98,6 +100,10 @@ void parseInputOptions(const cxxopts::ParseResult &parser,
     options.subdomain = parser["subdomain"].as<std::string>();
   if (parser["outputMesh"].count() > 0)
     options.outputMesh = parser["outputMesh"].as<std::string>();
+  if (parser["chunksize"].count() > 0)
+    options.chunkSize = parser["chunksize"].as<int>();
+  else
+    options.chunkSize = 1;
   return;
 }
 
@@ -243,7 +249,7 @@ int generateSubdomain(const std::string &meshFile,
 
 int generateSubdomainOutput(Adcirc::Geometry::Mesh &subdomainMesh,
                             std::vector<size_t> translation_table,
-                            const std::string &globalOutputFile,
+                            int chunksize, const std::string &globalOutputFile,
                             const std::string &subdomainOutputFile) {
   Adcirc::Logging::log("Writing subdomain output data", "[INFO]: ");
 
@@ -256,13 +262,19 @@ int generateSubdomainOutput(Adcirc::Geometry::Mesh &subdomainMesh,
   std::unique_ptr<boost::progress_display> progress(
       new boost::progress_display(global.numSnaps()));
 
-  for (size_t i = 0; i < global.numSnaps(); ++i) {
-    ++(*progress.get());
-    global.read(i);
-    std::unique_ptr<Adcirc::Output::OutputRecord> r(
-        subsetRecord(translation_table, global.dataAt(0)));
-    out.write(r.get());
-    global.clearAt(0);
+  for (size_t i = 0; i < global.numSnaps(); ++chunksize) {
+    std::vector<std::unique_ptr<Adcirc::Output::OutputRecord>> records;
+    records.reserve(chunksize);
+    for (size_t j = 0; j < chunksize; ++j) {
+      ++(*progress.get());
+      global.read(i + j);
+      records.push_back(std::unique_ptr<Adcirc::Output::OutputRecord>(
+          subsetRecord(translation_table, global.dataAt(0))));
+      global.clearAt(0);
+    }
+    for (size_t j = 0; j < chunksize; ++j) {
+      out.write(records[j].get());
+    }
   }
 
   global.close();
