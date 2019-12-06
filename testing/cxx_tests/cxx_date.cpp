@@ -33,10 +33,10 @@ int main() {
       return 1;
   }
 
-  Adcirc::CDate d2 = d + Adcirc::CDate::years(1) + Adcirc::CDate::months(14) + 
-                         Adcirc::CDate::weeks(7) + Adcirc::CDate::days(36) + 
-                         Adcirc::CDate::hours(49) + Adcirc::CDate::minutes(64) + 
-                         Adcirc::CDate::seconds(65) + 20 + 1.5;
+  Adcirc::CDate d2 = d + Adcirc::Calendar::Years(1) + Adcirc::Calendar::Months(14) + 
+                         Adcirc::Calendar::Weeks(7) + Adcirc::Calendar::Days(36) + 
+                         Adcirc::Calendar::Hours(49) + Adcirc::Calendar::Minutes(64) + 
+                         Adcirc::Calendar::Seconds(65) + 20 + 1.5;
   std::cout << d2 << std::endl;
   std::vector<int> d2v = d2.get();
   std::vector<int> d2v_expected = {2021,5,27,2,5,26,500};
@@ -44,10 +44,10 @@ int main() {
       std::cout << "Error: incorrect date addition" << std::endl;
   }
 
-  Adcirc::CDate d3 = d - Adcirc::CDate::years(1) - Adcirc::CDate::months(14) - 
-                         Adcirc::CDate::weeks(7) - Adcirc::CDate::days(36) - 
-                         Adcirc::CDate::hours(49) - Adcirc::CDate::minutes(64) - 
-                         Adcirc::CDate::seconds(65) - 20 - 1.5;
+  Adcirc::CDate d3 = d - Adcirc::Calendar::Years(1) - Adcirc::Calendar::Months(14) - 
+                         Adcirc::Calendar::Weeks(7) - Adcirc::Calendar::Days(36) - 
+                         Adcirc::Calendar::Hours(49) - Adcirc::Calendar::Minutes(64) - 
+                         Adcirc::Calendar::Seconds(65) - 20 - 1.5;
   std::cout << d3 << std::endl;
   std::vector<int> d3v = d3.get();
   std::vector<int> d3v_expected{2016,8,5,21,54,33,500};

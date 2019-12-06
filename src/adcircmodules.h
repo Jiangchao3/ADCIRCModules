@@ -20,6 +20,8 @@
 #define ADCMOD_ADCIRCMODULES_H
 
 #include "config.h"
+#include "cdate.h"
+#include "calendartype.h"
 #include "constants.h"
 #include "default_values.h"
 #include "ezproj.h"

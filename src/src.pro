@@ -161,6 +161,7 @@ HEADERS += \
     adcirc_outputfiles.h \
     adcircmodules_global.h \
     adcmap.h \
+    calendartype.h \
     cdate.h \
     formatting.h \
     fpcompare.h \

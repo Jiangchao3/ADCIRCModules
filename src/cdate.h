@@ -25,27 +25,13 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include "calendartype.h"
 #include "logging.h"
 
 namespace Adcirc {
 
 class CDate {
  public:
-  using milliseconds = std::chrono::milliseconds;
-  using seconds = std::chrono::seconds;
-  using minutes = std::chrono::minutes;
-  using hours = std::chrono::hours;
-  using days = std::chrono::duration<
-      int, std::ratio_multiply<std::ratio<24>, std::chrono::hours::period>>;
-  using weeks =
-      std::chrono::duration<int,
-                            std::ratio_multiply<std::ratio<7>, days::period>>;
-  using years = std::chrono::duration<
-      int, std::ratio_multiply<std::ratio<146097, 400>, days::period>>;
-  using months =
-      std::chrono::duration<int,
-                            std::ratio_divide<years::period, std::ratio<12>>>;
-
   CDate();
   CDate(const std::chrono::system_clock::time_point &t);
   CDate(const std::vector<int> &v);
@@ -54,24 +40,18 @@ class CDate {
         int second = 0, int millisecond = 0);
 
   //...operator overloads
-
-  void addSeconds(const int &value);
   bool operator<(const CDate &d) const;
   bool operator==(const CDate &d) const;
   bool operator!=(const CDate &d) const;
 
-  template <class T, typename std::enable_if<std::is_integral<T>::value>::type
-                         * = nullptr>
+  template <
+      class T,
+      typename std::enable_if<
+          !std::is_integral<T>::value && !std::is_floating_point<T>::value &&
+          !std::is_same<T, Adcirc::Calendar::Years>::value &&
+          !std::is_same<T, Adcirc::Calendar::Months>::value>::type * = nullptr>
   CDate &operator+=(const T &rhs) {
-    this->m_datetime += Adcirc::CDate::seconds(rhs);
-    return *this;
-  }
-
-  template <class T, typename std::enable_if<
-                         std::is_floating_point<T>::value>::type * = nullptr>
-  CDate &operator+=(const T &rhs) {
-    this->m_datetime += Adcirc::CDate::milliseconds(
-        static_cast<long>(std::floor(rhs * 1000.0)));
+    this->m_datetime += std::chrono::seconds(10);
     return *this;
   }
 
@@ -79,44 +59,49 @@ class CDate {
       class T,
       typename std::enable_if<
           !std::is_integral<T>::value && !std::is_floating_point<T>::value &&
-          !std::is_same<T, CDate::years>::value &&
-          !std::is_same<T, CDate::months>::value>::type * = nullptr>
-  CDate &operator+=(const T &rhs) {
-    this->m_datetime += rhs;
+          !std::is_same<T, Adcirc::Calendar::Years>::value &&
+          !std::is_same<T, Adcirc::Calendar::Months>::value>::type * = nullptr>
+  CDate &operator-=(const T &rhs) {
+    this->m_datetime -= rhs.nseconds();
     return *this;
   }
 
-  CDate &operator+=(const Adcirc::CDate::years &rhs);
-  CDate &operator+=(const Adcirc::CDate::months &rhs);
+  template <class T, typename std::enable_if<std::is_integral<T>::value>::type
+                         * = nullptr>
+  CDate &operator+=(const T &rhs) {
+    this->m_datetime += Adcirc::Calendar::Primitives::seconds(rhs);
+    return *this;
+  }
+
+  template <class T, typename std::enable_if<
+                         std::is_floating_point<T>::value>::type * = nullptr>
+  CDate &operator+=(const T &rhs) {
+    this->m_datetime += Adcirc::Calendar::Primitives::milliseconds(
+        static_cast<long>(std::floor(rhs * 1000.0)));
+
+    return *this;
+  }
+
+  CDate &operator+=(const Adcirc::Calendar::Years &rhs);
+  CDate &operator+=(const Adcirc::Calendar::Months &rhs);
 
   template <class T, typename std::enable_if<std::is_integral<T>::value>::type
                          * = nullptr>
   CDate &operator-=(const T &rhs) {
-    this->m_datetime -= Adcirc::CDate::seconds(rhs);
+    this->m_datetime -= Adcirc::Calendar::Primitives::seconds(rhs);
     return *this;
   }
 
   template <class T, typename std::enable_if<
                          std::is_floating_point<T>::value>::type * = nullptr>
   CDate &operator-=(const T &rhs) {
-    this->m_datetime -= Adcirc::CDate::milliseconds(
+    this->m_datetime -= Adcirc::Calendar::Primitives::milliseconds(
         static_cast<long>(std::floor(rhs * 1000.0)));
     return *this;
   }
 
-  template <
-      class T,
-      typename std::enable_if<
-          !std::is_integral<T>::value && !std::is_floating_point<T>::value &&
-          !std::is_same<T, CDate::years>::value &&
-          !std::is_same<T, CDate::months>::value>::type * = nullptr>
-  CDate &operator-=(const T &rhs) {
-    this->m_datetime -= rhs;
-    return *this;
-  }
-
-  CDate &operator-=(const Adcirc::CDate::years &rhs);
-  CDate &operator-=(const Adcirc::CDate::months &rhs);
+  CDate &operator-=(const Adcirc::Calendar::Years &rhs);
+  CDate &operator-=(const Adcirc::Calendar::Months &rhs);
 
   friend std::ostream &operator<<(std::ostream &os, const Adcirc::CDate &dt) {
     os << dt.toString();
@@ -200,14 +185,20 @@ template Adcirc::CDate operator+(Adcirc::CDate, const unsigned long &);
 template Adcirc::CDate operator+(Adcirc::CDate, const float &);
 template Adcirc::CDate operator+(Adcirc::CDate, const double &);
 template Adcirc::CDate operator+(Adcirc::CDate,
-                                 const Adcirc::CDate::milliseconds &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::seconds &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::minutes &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::hours &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::days &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::months &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::weeks &);
-template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::CDate::years &);
+                                 const Adcirc::Calendar::Milliseconds &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Seconds &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Minutes &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Hours &);
+template Adcirc::CDate operator+(Adcirc::CDate, const Adcirc::Calendar::Days &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Months &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Weeks &);
+template Adcirc::CDate operator+(Adcirc::CDate,
+                                 const Adcirc::Calendar::Years &);
 template Adcirc::CDate operator-(Adcirc::CDate, const short &);
 template Adcirc::CDate operator-(Adcirc::CDate, const int &);
 template Adcirc::CDate operator-(Adcirc::CDate, const long &);
@@ -217,14 +208,20 @@ template Adcirc::CDate operator-(Adcirc::CDate, const unsigned long &);
 template Adcirc::CDate operator-(Adcirc::CDate, const float &);
 template Adcirc::CDate operator-(Adcirc::CDate, const double &);
 template Adcirc::CDate operator-(Adcirc::CDate,
-                                 const Adcirc::CDate::milliseconds &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::seconds &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::minutes &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::hours &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::days &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::months &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::weeks &);
-template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::CDate::years &);
+                                 const Adcirc::Calendar::Milliseconds &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Seconds &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Minutes &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Hours &);
+template Adcirc::CDate operator-(Adcirc::CDate, const Adcirc::Calendar::Days &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Months &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Weeks &);
+template Adcirc::CDate operator-(Adcirc::CDate,
+                                 const Adcirc::Calendar::Years &);
 #endif
 
 #endif  // ADCMODULES_CDATE_H

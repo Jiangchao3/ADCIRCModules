@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) {
       readOceanweatherDates(owifile);
 
   Adcirc::CDate startSimDate =
-      startWindDate - Adcirc::CDate::days(static_cast<long>(std::floor(spinup_days)));
+      startWindDate - Adcirc::Calendar::Days(static_cast<long>(std::floor(spinup_days)));
   Adcirc::CDate endSimDate =
-      endWindDate + Adcirc::CDate::days(static_cast<long>(std::floor(spindown_days)));
+      endWindDate + Adcirc::Calendar::Days(static_cast<long>(std::floor(spindown_days)));
 
   double duration =
       (endSimDate.toSeconds() - startSimDate.toSeconds()) / 86400.0;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
       Adcirc::Logging::warning(
           "Adding time to ensure end date falls on a SWAN cycle",
           "[WARNING]: ");
-      endSimDate += Adcirc::CDate::seconds(swandt - swancheck);
+      endSimDate += Adcirc::Calendar::Seconds(swandt - swancheck);
     }
   }
 

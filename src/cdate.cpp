@@ -17,8 +17,10 @@
 // along with ADCIRCModules.  If not, see <http://www.gnu.org/licenses/>.
 //------------------------------------------------------------------------*/
 #include "cdate.h"
+
 #include <chrono>
 #include <iostream>
+
 #include "boost/format.hpp"
 #include "date.h"
 #include "logging.h"
@@ -70,7 +72,7 @@ date::year_month_day normalize(date::year_month_day ymd) {
 }
 
 constexpr date::year_month_day c_epoch() {
-  date::year_month_day(date::year(1970) / 1 / 1);
+  return date::year_month_day(date::year(1970) / 1 / 1);
 }
 
 CDate::CDate() { this->set(1970, 1, 1, 0, 0, 0, 0); }
@@ -86,8 +88,6 @@ CDate::CDate(int year, int month, int day, int hour, int minute, int second,
   this->set(year, month, day, hour, minute, second, millisecond);
 }
 
-void CDate::addSeconds(const int &value) { this->m_datetime + seconds(value); }
-
 bool CDate::operator<(const CDate &d) const {
   return this->time_point() < d.time_point();
 }
@@ -100,40 +100,40 @@ bool CDate::operator!=(const CDate &d) const {
   return this->time_point() != d.time_point();
 }
 
-CDate &CDate::operator-=(const CDate::months &rhs) {
+CDate &CDate::operator-=(const Adcirc::Calendar::Months &rhs) {
   s_datetime d(this->m_datetime);
   date::year_month_day dd = d.ymd();
-  dd -= date::months(rhs);
+  dd -= date::months(rhs.nmonths());
   dd = normalize(dd);
   this->set(int(dd.year()), unsigned(dd.month()), unsigned(dd.day()),
             this->hour(), this->minute(), this->second(), this->millisecond());
   return *this;
 }
 
-CDate &CDate::operator-=(const CDate::years &rhs) {
+CDate &CDate::operator-=(const Adcirc::Calendar::Years &rhs) {
   s_datetime d(this->m_datetime);
   date::year_month_day dd = d.ymd();
-  dd -= date::years(rhs);
+  dd -= date::years(rhs.nyears());
   dd = normalize(dd);
   this->set(int(dd.year()), unsigned(dd.month()), unsigned(dd.day()),
             this->hour(), this->minute(), this->second(), this->millisecond());
   return *this;
 }
 
-CDate &CDate::operator+=(const CDate::months &rhs) {
+CDate &CDate::operator+=(const Adcirc::Calendar::Months &rhs) {
   s_datetime d(this->m_datetime);
   date::year_month_day dd = d.ymd();
-  dd += date::months(rhs);
+  dd += date::months(rhs.nmonths());
   dd = normalize(dd);
   this->set(int(dd.year()), unsigned(dd.month()), unsigned(dd.day()),
             this->hour(), this->minute(), this->second(), this->millisecond());
   return *this;
 }
 
-CDate &CDate::operator+=(const CDate::years &rhs) {
+CDate &CDate::operator+=(const Adcirc::Calendar::Years &rhs) {
   s_datetime d(this->m_datetime);
   date::year_month_day dd = d.ymd();
-  dd += date::years(rhs);
+  dd += date::years(rhs.nyears());
   dd = normalize(dd);
   this->set(int(dd.year()), unsigned(dd.month()), unsigned(dd.day()),
             this->hour(), this->minute(), this->second(), this->millisecond());
