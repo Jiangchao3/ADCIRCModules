@@ -86,6 +86,8 @@ CDate::CDate(int year, int month, int day, int hour, int minute, int second,
   this->set(year, month, day, hour, minute, second, millisecond);
 }
 
+void CDate::addSeconds(const int &value) { this->m_datetime + seconds(value); }
+
 bool CDate::operator<(const CDate &d) const {
   return this->time_point() < d.time_point();
 }

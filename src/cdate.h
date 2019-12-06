@@ -50,11 +50,12 @@ class CDate {
   CDate(const std::chrono::system_clock::time_point &t);
   CDate(const std::vector<int> &v);
   CDate(const CDate &d);
-  CDate(int year, int month = 1, int day = 1, int hour = 1, int minute = 0,
+  CDate(int year, int month = 1, int day = 1, int hour = 0, int minute = 0,
         int second = 0, int millisecond = 0);
 
   //...operator overloads
 
+  void addSeconds(const int &value);
   bool operator<(const CDate &d) const;
   bool operator==(const CDate &d) const;
   bool operator!=(const CDate &d) const;
