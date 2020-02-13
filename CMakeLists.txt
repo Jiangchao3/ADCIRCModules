@@ -423,7 +423,7 @@ IF(GDAL_FOUND)
    TARGET_COMPILE_DEFINITIONS( adcircmodules PRIVATE "USE_GDAL" )
    TARGET_INCLUDE_DIRECTORIES( adcircmodules PRIVATE ${GDAL_INCLUDE_DIR})
    LINK_DIRECTORIES( ${GDAL_LIBPATH} )
-   TARGET_LINK_LIBRARIES( adcircmodules ${GDAL_LIBRARY})
+   TARGET_LINK_LIBRARIES( adcircmodules PRIVATE ${GDAL_LIBRARY})
    SET( HEADER_LIST ${HEADER_LIST} 
                     ${CMAKE_SOURCE_DIR}/src/rasterdata.h 
                     ${CMAKE_SOURCE_DIR}/src/griddata.h ) 
@@ -467,19 +467,19 @@ INSTALL( FILES ${CMAKE_CURRENT_BINARY_DIR}/adcircmodulesConfigVersion.cmake DEST
 SET_TARGET_PROPERTIES(adcircmodules PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 SET_TARGET_PROPERTIES(adcircmodules PROPERTIES CMAKE_CXX_INLINES_HIDDEN YES)
 
-TARGET_LINK_LIBRARIES( adcircmodules ezproj shapelib )
+TARGET_LINK_LIBRARIES( adcircmodules PRIVATE ezproj shapelib )
 
 IF(WIN32)
     LINK_DIRECTORIES( ${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64 )
     TARGET_LINK_LIBRARIES( adcircmodules netcdf hdf5 hdf5_hl )
 ELSE(WIN32)
-    TARGET_LINK_LIBRARIES( adcircmodules ${NETCDF_LIBRARIES} )
+    TARGET_LINK_LIBRARIES( adcircmodules PRIVATE ${NETCDF_LIBRARIES} )
 ENDIF(WIN32)
 
 IF(OpenSSL_FOUND)
     TARGET_COMPILE_DEFINITIONS( adcircmodules PRIVATE ADCMOD_HAVE_OPENSSL )
     TARGET_INCLUDE_DIRECTORIES( adcircmodules PRIVATE ${OPENSSL_INCLUDE_DIR}) 
-    TARGET_LINK_LIBRARIES( adcircmodules ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} )
+    TARGET_LINK_LIBRARIES( adcircmodules PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} )
 ENDIF( OpenSSL_FOUND )
 
 IF(APPLE)
@@ -489,20 +489,20 @@ IF(APPLE)
 ENDIF(APPLE)
 
 IF(USE_GOOGLE_FLAT_MAP)
-    TARGET_LINK_LIBRARIES(adcircmodules absl::flat_hash_map)
+    TARGET_LINK_LIBRARIES(adcircmodules PRIVATE absl::flat_hash_map)
     ADD_DEPENDENCIES(adcircmodules absl::flat_hash_map)
     TARGET_COMPILE_DEFINITIONS( adcircmodules PRIVATE USE_GOOGLE_FLAT_MAP )
 ENDIF(USE_GOOGLE_FLAT_MAP)
 
 IF(OPENMP_FOUND)
     TARGET_COMPILE_OPTIONS( adcircmodules PRIVATE ${OpenMP_CXX_FLAGS})
-    TARGET_LINK_LIBRARIES(  adcircmodules ${OpenMP_CXX_LIB_NAMES} ${OpenMP_CXX_FLAGS} )
+    TARGET_LINK_LIBRARIES(  adcircmodules PRIVATE ${OpenMP_CXX_LIB_NAMES} ${OpenMP_CXX_FLAGS} )
 ENDIF(OPENMP_FOUND)
 
 IF(HDF5_FOUND)
     TARGET_COMPILE_DEFINITIONS( adcircmodules PRIVATE HAVE_HDF5 ${HDF5_DEFINITIONS} )
     TARGET_INCLUDE_DIRECTORIES( adcircmodules PRIVATE ${HDF5_INCLUDE_DIRS} )
-    TARGET_LINK_LIBRARIES( adcircmodules ${HDF5_LIBRARIES} )
+    TARGET_LINK_LIBRARIES( adcircmodules PRIVATE ${HDF5_LIBRARIES} )
 ENDIF(HDF5_FOUND)
 
 ###########################################################################
@@ -785,6 +785,12 @@ TARGET_INCLUDE_DIRECTORIES( highWaterMarks PRIVATE ${Boost_INCLUDE_DIRS} ${CMAKE
                                            ${CMAKE_SOURCE_DIR}/thirdparty/shapelib 
                                            ${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src  
                                            ${CMAKE_SOURCE_DIR}/thirdparty/cxxopts )
+IF(GDAL_FOUND)
+   TARGET_COMPILE_DEFINITIONS( highWaterMarks PRIVATE "USE_GDAL" )
+   TARGET_INCLUDE_DIRECTORIES( highWaterMarks PRIVATE ${GDAL_INCLUDE_DIR})
+   LINK_DIRECTORIES( ${GDAL_LIBPATH} )
+   TARGET_LINK_LIBRARIES( highWaterMarks PRIVATE ${GDAL_LIBRARY})
+ENDIF(GDAL_FOUND)
 INSTALL( TARGETS highWaterMarks RUNTIME DESTINATION bin )
 
 ###########################################################################
