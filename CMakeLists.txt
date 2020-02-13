@@ -774,4 +774,15 @@ TARGET_INCLUDE_DIRECTORIES( resultsScope PRIVATE
 ADD_DEPENDENCIES( resultsScope adcircmodules ezproj )
 TARGET_LINK_LIBRARIES( resultsScope PRIVATE adcircmodules ezproj ${Boost_LIBRARIES} )
 INSTALL( TARGETS resultsScope RUNTIME DESTINATION bin )
+
+ADD_EXECUTABLE( highWaterMarks ${CMAKE_SOURCE_DIR}/utilities/highWaterMarks/main.cpp 
+                               ${CMAKE_SOURCE_DIR}/utilities/highWaterMarks/highwatermarkoptions.cpp
+                               ${CMAKE_SOURCE_DIR}/utilities/highWaterMarks/locations.cpp 
+                               ${CMAKE_SOURCE_DIR}/utilities/highWaterMarks/location.cpp )
+TARGET_LINK_LIBRARIES( highWaterMarks PRIVATE adcircmodules shapelib)
+TARGET_INCLUDE_DIRECTORIES( highWaterMarks PRIVATE ${Boost_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src 
+                                           ${CMAKE_SOURCE_DIR}/thirdparty/shapelib 
+                                           ${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src  
+                                           ${CMAKE_SOURCE_DIR}/thirdparty/cxxopts )
+
 ###########################################################################

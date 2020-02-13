@@ -240,10 +240,10 @@ std::tuple<double, double> StationInterpolation::interpVector(
   double v2y = data.dataAt(0)->v(n2);
   double v3x = data.dataAt(0)->u(n3);
   double v3y = data.dataAt(0)->v(n3);
-  double vx = this->interpolateDryValues(v1x, w1, v2x, w2, v3x, w3,
-                                         data.defaultValue());
-  double vy = this->interpolateDryValues(v1y, w1, v2y, w2, v3y, w3,
-                                         data.defaultValue());
+  double vx = StationInterpolation::interpolateDryValues(
+      v1x, w1, v2x, w2, v3x, w3, data.defaultValue());
+  double vy = StationInterpolation::interpolateDryValues(
+      v1y, w1, v2y, w2, v3y, w3, data.defaultValue());
   return std::make_tuple(vx, vy);
 }
 
@@ -378,7 +378,8 @@ double StationInterpolation::interpolateDryValues(double v1, double w1,
   return v1 * w1 + v2 * w2 + v3 * w3;
 }
 
-Adcirc::CDate StationInterpolation::dateFromString(const std::string &dateString) {
+Adcirc::CDate StationInterpolation::dateFromString(
+    const std::string &dateString) {
   int year = stoi(dateString.substr(0, 4));
   int month = stoi(dateString.substr(4, 2));
   int day = stoi(dateString.substr(6, 2));
