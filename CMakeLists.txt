@@ -10,12 +10,20 @@
 # in a cross platform environment. 
 #
 ###########################################################################
+
+
+###########################################################################
+#  GENERAL OPTIONS
+###########################################################################
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
+PROJECT(ADCIRCModules)
+ENABLE_LANGUAGE( CXX ) 
+ENABLE_LANGUAGE( C )
 INCLUDE (CheckIncludeFiles)
 INCLUDE (CheckLibraryExists) 
 INCLUDE (CheckFunctionExists)
 INCLUDE (GNUInstallDirs)
 INCLUDE (CMakePackageConfigHelpers)
-
 #...Set the default build type
 IF(DEFINED CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "Choose the type of
@@ -30,12 +38,6 @@ ELSE()
         options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release
         RelWithDebInfo MinSizeRel.")
 ENDIF()
-
-###########################################################################
-#  GENERAL OPTIONS
-###########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
-PROJECT(ADCIRCModules)
 ###########################################################################
 
 
@@ -118,6 +120,12 @@ ENDIF()
 MESSAGE(STATUS "ADCIRCModules Version: ${GIT_VERSION}")
 ###########################################################################
 
+###########################################################################
+# Misc Options
+###########################################################################
+OPTION( ADCIRCMODULES_DISABLE_GDAL_PROJ "Disable GDAL-->Proj interaction" OFF )
+MARK_AS_ADVANCED( ADCIRCMODULES_DISABLE_GDAL_PROJ ) 
+###########################################################################
 
 ###########################################################################
 # ABSEIL SWISS TABLES
@@ -427,6 +435,9 @@ IF(GDAL_FOUND)
    SET( HEADER_LIST ${HEADER_LIST} 
                     ${CMAKE_SOURCE_DIR}/src/rasterdata.h 
                     ${CMAKE_SOURCE_DIR}/src/griddata.h ) 
+   IF( ADCIRCMODULES_DISABLE_GDAL_PROJ ) 
+       TARGET_COMPILE_DEFINITIONS( adcircmodules PRIVATE DISABLE_GDAL_PROJ )
+   ENDIF()
 ENDIF(GDAL_FOUND)
 TARGET_INCLUDE_DIRECTORIES( adcircmodules PRIVATE ${CMAKE_SOURCE_DIR}/src
                                 ${CMAKE_SOURCE_DIR}/src/pimpl

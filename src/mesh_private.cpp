@@ -1232,7 +1232,7 @@ void MeshPrivate::toNodeShapefile(const std::string &outputFile) {
  * @param outputFile name of output file (.shp) being created
  */
 void MeshPrivate::writePrjFile(const std::string &outputFile) {
-#ifdef USE_GDAL
+#if defined(USE_GDAL) || defined(DISABLE_GDAL_PROJ)
   std::string outputPrj =
       Adcirc::FileIO::Generic::getFileWithoutExtension(outputFile);
   outputPrj += ".prj";
@@ -1254,9 +1254,17 @@ void MeshPrivate::writePrjFile(const std::string &outputFile) {
   f << pj;
   f.close();
   CPLFree(pj);
+
 #else
+
+#ifndef(USE_GDAL)
   Adcirc::Logging::warning(
       "ESRI .prj file not written because GDAL not enabled.");
+#else
+  Adcirc::Logging::warning(
+      "ESRI .prj file not written because GDAL->PROJ interaction not enabled.");
+#endif
+
 #endif
   return;
 }
@@ -2868,6 +2876,7 @@ void MeshPrivate::toRaster(const std::string &filename,
   double transform[6] = {xmin, resolution, 0, ymax, 0, -resolution};
   raster->SetGeoTransform(transform);
 
+#ifndef DISABLE_GDAL_PROJ
   char *cwkt = nullptr;
   OGRSpatialReference sref;
   std::string srefstr = boost::str(boost::format("EPSG:%i") % this->m_epsg);
@@ -2875,6 +2884,7 @@ void MeshPrivate::toRaster(const std::string &filename,
   sref.exportToWkt(&cwkt);
   raster->SetProjection(cwkt);
   CPLFree(cwkt);
+#endif  
 
   GDALRasterBand *band = raster->GetRasterBand(1);
   band->SetDescription(description.c_str());

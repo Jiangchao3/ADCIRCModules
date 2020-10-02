@@ -125,7 +125,9 @@ bool Rasterdata::getRasterMetadata() {
     return false;
   }
 
+#ifndef DISABLE_GDAL_PROJ
   this->m_projectionReference = std::string(this->m_file->GetProjectionRef());
+#endif
   return true;
 }
 
@@ -280,7 +282,11 @@ size_t Rasterdata::nx() const { return this->m_nx; }
  * @return projection string
  */
 std::string Rasterdata::projectionString() const {
+#ifndef DISABLE_GDAL_PROJ	
   return this->m_projectionReference;
+#else
+  return std::string();
+#endif
 }
 
 /**
