@@ -796,3 +796,27 @@ void Mesh::toRaster(const std::string &filename, const std::vector<double> &z,
   this->m_impl->toRaster(filename, z, extent, resolution, nullvalue,
                          description, units, partialWetting);
 }
+
+size_t Mesh::numNodeNeighbors(size_t nodeIndex) const {
+  return this->m_impl->numNodeNeighbors(nodeIndex);
+}
+
+std::vector<Adcirc::Geometry::Node *> Mesh::neighbors(size_t nodeIndex) const {
+  return this->m_impl->neighbors(nodeIndex);
+}
+
+std::vector<std::vector<size_t>> Mesh::fullNodeTable() const {
+  return this->m_impl->fullNodeTable();
+}
+
+std::vector<std::vector<size_t>> Mesh::fullElementTable() const {
+  return this->m_impl->fullElementTable();
+}
+
+size_t Mesh::maxNodeNeighbors() const {
+  return this->m_impl->maxNodeNeighbors();
+}
+
+size_t Mesh::maxElementNeighbors() const {
+  return this->m_impl->maxElementNeighbors();
+}

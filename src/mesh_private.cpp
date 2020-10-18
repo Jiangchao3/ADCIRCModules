@@ -247,20 +247,15 @@ void MeshPrivate::read(MeshFormat format) {
   this->_init();
 
   switch (fmt) {
-    case MeshAdcirc:
-      this->readAdcircMeshAscii();
+    case MeshAdcirc:this->readAdcircMeshAscii();
       break;
-    case MeshAdcircNetcdf:
-      this->readAdcircMeshNetcdf();
+    case MeshAdcircNetcdf:this->readAdcircMeshNetcdf();
       break;
-    case Mesh2DM:
-      this->read2dmMesh();
+    case Mesh2DM:this->read2dmMesh();
       break;
-    case MeshDFlow:
-      this->readDflowMesh();
+    case MeshDFlow:this->readDflowMesh();
       break;
-    default:
-      adcircmodules_throw_exception("Invalid mesh format selected.");
+    default:adcircmodules_throw_exception("Invalid mesh format selected.");
       break;
   }
   return;
@@ -590,8 +585,8 @@ void MeshPrivate::read2dmElements(std::vector<std::string> &elements) {
         }
       } else {
         adcircmodules_throw_exception("Too many nodes (" +
-                                      std::to_string(n.size()) +
-                                      ") detected in element.");
+            std::to_string(n.size()) +
+            ") detected in element.");
       }
     } else {
       adcircmodules_throw_exception("Error reading 2dm element");
@@ -870,7 +865,7 @@ void MeshPrivate::readAdcircLandBoundaries(std::fstream &fid) {
 
       } else if (code == 4 || code == 24) {
         if (!FileIO::AdcircIO::splitStringBoundary24Format(
-                tempLine, n1, n2, crest, subcritical, supercritical)) {
+            tempLine, n1, n2, crest, subcritical, supercritical)) {
           fid.close();
           adcircmodules_throw_exception("Error reading boundaries");
         }
@@ -889,8 +884,8 @@ void MeshPrivate::readAdcircLandBoundaries(std::fstream &fid) {
 
       } else if (code == 5 || code == 25) {
         if (!FileIO::AdcircIO::splitStringBoundary25Format(
-                tempLine, n1, n2, crest, subcritical, supercritical, pipeheight,
-                pipecoef, pipediam)) {
+            tempLine, n1, n2, crest, subcritical, supercritical, pipeheight,
+            pipecoef, pipediam)) {
           fid.close();
           adcircmodules_throw_exception("Error reading boundaries");
         }
@@ -987,7 +982,7 @@ Node *MeshPrivate::node(size_t index) {
     return &this->m_nodes[index];
   } else {
     adcircmodules_throw_exception("Mesh: Node index " + std::to_string(index) +
-                                  " out of bounds");
+        " out of bounds");
     return nullptr;
   }
 }
@@ -1002,7 +997,7 @@ Node MeshPrivate::nodeC(size_t index) const {
     return this->m_nodes[index];
   } else {
     adcircmodules_throw_exception("Mesh: Node index " + std::to_string(index) +
-                                  " out of bounds");
+        " out of bounds");
     return Node();
   }
 }
@@ -1048,7 +1043,7 @@ Node *MeshPrivate::nodeById(size_t id) {
       return &this->m_nodes[id - 1];
     } else {
       adcircmodules_throw_exception("Mesh: Node id " + std::to_string(id) +
-                                    " not found");
+          " not found");
       return nullptr;
     }
   } else {
@@ -1924,17 +1919,13 @@ void MeshPrivate::write(const std::string &outputFile, MeshFormat format) {
   }
 
   switch (fmt) {
-    case MeshAdcirc:
-      this->writeAdcircMesh(outputFile);
+    case MeshAdcirc:this->writeAdcircMesh(outputFile);
       break;
-    case Mesh2DM:
-      this->write2dmMesh(outputFile);
+    case Mesh2DM:this->write2dmMesh(outputFile);
       break;
-    case MeshDFlow:
-      this->writeDflowMesh(outputFile);
+    case MeshDFlow:this->writeDflowMesh(outputFile);
       break;
-    default:
-      adcircmodules_throw_exception("No valid mesh format specified.");
+    default:adcircmodules_throw_exception("No valid mesh format specified.");
       break;
   }
 }
@@ -1951,7 +1942,7 @@ void MeshPrivate::writeAdcircMesh(const std::string &filename) {
   //...Write the header
   outputFile << this->meshHeaderString() << "\n";
   std::string tempString = boost::str(boost::format("%11i %11i") %
-                                      this->numElements() % this->numNodes());
+      this->numElements() % this->numNodes());
   outputFile << tempString << "\n";
 
   //...Write the mesh nodes
@@ -2242,11 +2233,11 @@ bool MeshPrivate::elementOrderingIsLogical() {
  * @param id nodal id
  * @return array position
  */
-size_t MeshPrivate::nodeIndexById(size_t id) {
+size_t MeshPrivate::nodeIndexById(size_t id) const {
   if (this->m_nodeOrderingLogical) {
     return id - 1;
   } else {
-    return this->m_nodeLookup[id];
+    return this->m_nodeLookup.at(id);
   }
 }
 
@@ -2255,11 +2246,11 @@ size_t MeshPrivate::nodeIndexById(size_t id) {
  * @param id element id
  * @return array position
  */
-size_t MeshPrivate::elementIndexById(size_t id) {
+size_t MeshPrivate::elementIndexById(size_t id) const {
   if (this->m_elementOrderingLogical) {
     return id;
   } else {
-    return this->m_elementLookup[id];
+    return this->m_elementLookup.at(id);
   }
 }
 
@@ -2483,7 +2474,7 @@ std::vector<double> MeshPrivate::computeMeshSize() {
   std::vector<double> meshsize(this->numNodes());
 
   for (size_t i = 0; i < this->numNodes(); ++i) {
-    std::vector<Element *> l = this->m_elementTable.elementList(this->node(i));
+    std::vector<Element *> l = this->m_elementTable.elementList(i);
     double a = 0.0;
     for (size_t j = 0; j < l.size(); ++j) {
       a += l[j]->elementSize(false);
@@ -2610,11 +2601,11 @@ void MeshPrivate::buildElementTable() {
 
 /**
  * @brief Returns the number of elements surrounding a specified node
- * @param n address of node
+ * @param n index of node
  * @return number of elements
  */
 size_t MeshPrivate::numElementsAroundNode(Adcirc::Geometry::Node *n) {
-  return this->m_elementTable.numElementsAroundNode(n);
+  return this->m_elementTable.numElementsAroundNode(n->id() - 1);
 }
 
 /**
@@ -2634,7 +2625,7 @@ size_t MeshPrivate::numElementsAroundNode(size_t nodeIndex) {
  */
 Adcirc::Geometry::Element *MeshPrivate::elementTable(Adcirc::Geometry::Node *n,
                                                      size_t listIndex) {
-  return this->m_elementTable.elementTable(n, listIndex);
+  return this->m_elementTable.elementTable(this->nodeIndexById(n->id()), listIndex);
 }
 
 /**
@@ -2655,7 +2646,7 @@ Adcirc::Geometry::Element *MeshPrivate::elementTable(size_t nodeIndex,
  */
 std::vector<Adcirc::Geometry::Element *> MeshPrivate::elementsAroundNode(
     Adcirc::Geometry::Node *n) {
-  return this->m_elementTable.elementList(n);
+  return this->m_elementTable.elementList(this->nodeIndexById(n->id()));
 }
 
 std::vector<Adcirc::Geometry::Node *> MeshPrivate::boundaryNodes() {
@@ -2927,9 +2918,9 @@ std::vector<float> MeshPrivate::getRasterValues(
       double v2 = z[n2];
       double v3 = z[n3];
       zv[i] = partialWetting ? MeshPrivate::calculateValueWithPartialWetting(
-                                   v1, v2, v3, nullvalue, weights[i])
+          v1, v2, v3, nullvalue, weights[i])
                              : MeshPrivate::calculateValueWithoutPartialWetting(
-                                   v1, v2, v3, nullvalue, weights[i]);
+              v1, v2, v3, nullvalue, weights[i]);
     }
   }
   return zv;
@@ -2950,7 +2941,7 @@ MeshPrivate::computeRasterInterpolationWeights(
 #ifdef _OPENMP
   std::string parmessage = boost::str(
       boost::format("Using %i threads to compute interpolation weights.") %
-      omp_get_num_procs());
+          omp_get_num_procs());
   Adcirc::Logging::log(parmessage);
 #endif
 
@@ -2984,21 +2975,21 @@ float MeshPrivate::calculateValueWithoutPartialWetting(
     const double v1, const double v2, const double v3, const double nullvalue,
     const std::vector<double> &weight) {
   return FpCompare::equalTo(v1, nullvalue) ||
-                 FpCompare::equalTo(v2, nullvalue) ||
-                 FpCompare::equalTo(v3, nullvalue)
-             ? nullvalue
-             : v1 * weight[0] + v2 * weight[1] + v3 * weight[2];
+      FpCompare::equalTo(v2, nullvalue) ||
+      FpCompare::equalTo(v3, nullvalue)
+         ? nullvalue
+         : v1 * weight[0] + v2 * weight[1] + v3 * weight[2];
 }
 
 float MeshPrivate::calculateValueWithPartialWetting(
     const double v1, const double v2, const double v3, const double nullvalue,
     const std::vector<double> &weight) {
   bool b1 = FpCompare::equalTo(v1, nullvalue) ||
-            FpCompare::equalTo(v1, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v1, adcircmodules_default_value<double>());
   bool b2 = FpCompare::equalTo(v2, nullvalue) ||
-            FpCompare::equalTo(v2, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v2, adcircmodules_default_value<double>());
   bool b3 = FpCompare::equalTo(v3, nullvalue) ||
-            FpCompare::equalTo(v3, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v3, adcircmodules_default_value<double>());
   if (!b1 && !b2 && !b3) {
     return weight[0] * v1 + weight[1] * v2 + weight[2] * v3;
   } else if (b1 && b2 && b3) {
@@ -3020,4 +3011,28 @@ float MeshPrivate::calculateValueWithPartialWetting(
     return weight[1] * f * v2 + weight[2] * f * v3;
   }
   return std::numeric_limits<float>::max();
+}
+
+size_t MeshPrivate::maxNodeNeighbors() const {
+  return m_elementTable.maxNodesAroundNode();
+}
+
+size_t MeshPrivate::maxElementNeighbors() const {
+  return m_elementTable.maxElementsAroundNode();
+}
+
+size_t MeshPrivate::numNodeNeighbors(size_t nodeIndex) const {
+  return m_elementTable.numNodesAroundNode(nodeIndex);
+}
+
+std::vector<Adcirc::Geometry::Node *> MeshPrivate::neighbors(size_t nodeIndex) const {
+  return m_elementTable.nodeList(nodeIndex);
+}
+
+std::vector<std::vector<size_t>> MeshPrivate::fullNodeTable() const {
+  return m_elementTable.fullNodeTable();
+}
+
+std::vector<std::vector<size_t>> MeshPrivate::fullElementTable() const {
+  return m_elementTable.fullElementTable();
 }

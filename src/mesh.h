@@ -255,6 +255,15 @@ class Mesh {
                                      const std::string &units = "none",
                                      const bool partialWetting = true) const;
 
+  size_t ADCIRCMODULES_EXPORT numNodeNeighbors(size_t nodeIndex) const;
+  std::vector<Adcirc::Geometry::Node *> ADCIRCMODULES_EXPORT neighbors(size_t nodeIndex) const;
+
+  std::vector<std::vector<size_t>> ADCIRCMODULES_EXPORT fullNodeTable() const;
+  std::vector<std::vector<size_t>> ADCIRCMODULES_EXPORT fullElementTable() const;
+
+  size_t ADCIRCMODULES_EXPORT maxNodeNeighbors() const;
+  size_t ADCIRCMODULES_EXPORT maxElementNeighbors() const;
+
  private:
   std::unique_ptr<Adcirc::Private::MeshPrivate> m_impl;
 };

@@ -30,21 +30,22 @@ namespace Geometry {
 /**
  * @brief Default constructor
  */
-ElementTable::ElementTable() : m_mesh(nullptr), m_initialized(false) {}
+ElementTable::ElementTable()
+    : m_mesh(nullptr), m_initialized(false), m_maxElementsAroundNode(0), m_maxNodesAroundNode(0) {}
 
 /**
  * @brief Constructor with smart pointer meshimpl as a parameter
  * @param[in] mesh sets the mesh used to generate the ElementTable
  */
 ElementTable::ElementTable(std::unique_ptr<Adcirc::Private::MeshPrivate> *mesh)
-    : m_mesh(mesh->get()), m_initialized(false) {}
+    : m_mesh(mesh->get()), m_initialized(false), m_maxElementsAroundNode(0), m_maxNodesAroundNode(0) {}
 
 /**
  * @brief Constructor with mesh as a parameter
  * @param[in] mesh sets the mesh used to generate the ElementTable
  */
 ElementTable::ElementTable(Adcirc::Geometry::Mesh *mesh)
-    : m_mesh(mesh->m_impl.get()), m_initialized(false) {}
+    : m_mesh(mesh->m_impl.get()), m_initialized(false), m_maxElementsAroundNode(0), m_maxNodesAroundNode(0) {}
 
 /**
  * @brief Constructor with meshimpl as a parameter
@@ -75,12 +76,32 @@ void ElementTable::build() {
   this->m_elementTable.reserve(this->m_mesh->numNodes());
   for (size_t i = 0; i < this->m_mesh->numElements(); ++i) {
     for (size_t j = 0; j < this->m_mesh->element(i)->n(); ++j) {
-      Node *n = this->m_mesh->element(i)->node(j);
+      auto n = this->m_mesh->nodeIndexById(this->m_mesh->element(i)->node(j)->id());
       this->m_elementTable[n].push_back(this->m_mesh->element(i));
     }
   }
+
+  this->m_nodeTable.reserve(this->m_mesh->numNodes());
+  for (size_t i = 0; i < this->m_mesh->numNodes(); ++i) {
+    m_maxElementsAroundNode = std::max(m_maxElementsAroundNode, m_elementTable[i].size());
+    auto elmList = this->elementList(i);
+    std::vector<size_t> nid;
+    nid.reserve(elmList.size() * 3);
+    for (auto &e : elmList) {
+      for (size_t j = 0; j < e->n(); ++j) {
+        nid.push_back(m_mesh->nodeIndexById(e->node(j)->id()));
+      }
+    }
+    std::sort(nid.begin(), nid.end());
+    auto p = std::unique(nid.begin(), nid.end());
+    this->m_nodeTable[i].reserve(p - nid.begin());
+    for (auto j = nid.begin(); j != p; ++j) {
+      this->m_nodeTable[i].push_back(m_mesh->node(*(j)));
+    }
+    m_maxNodesAroundNode = std::max(m_maxNodesAroundNode, m_nodeTable[i].size());
+  }
+
   this->m_initialized = true;
-  return;
 }
 
 /**
@@ -88,57 +109,26 @@ void ElementTable::build() {
  * @param[in] n node to return the element table for
  * @return vector of element pointers around the node
  */
-std::vector<Element *> ElementTable::elementList(Node *n) {
-  if (this->m_elementTable.find(n) != this->m_elementTable.end())
-    return this->m_elementTable[n];
+std::vector<Element *> ElementTable::elementList(size_t nodeIndex) const {
+  if (nodeIndex < m_mesh->numNodes())
+    return this->m_elementTable[nodeIndex];
   else
-    adcircmodules_throw_exception("Node " + std::to_string(n->id()) +
-                                  " not part of mesh");
+    adcircmodules_throw_exception("Node Index " + std::to_string(nodeIndex) +
+        " greater than number of nodes");
   return std::vector<Element *>();
-}
-
-/**
- * @brief Returns the number of elements around a specified node pointer
- * @param[in] n pointer to node to return the number of elements for
- * @return number of elements around a specified node
- */
-size_t ElementTable::numElementsAroundNode(Adcirc::Geometry::Node *n) {
-  if (this->m_elementTable.find(n) != this->m_elementTable.end())
-    return this->m_elementTable[n].size();
-  else
-    return adcircmodules_default_value<size_t>();
 }
 
 /**
  * @param[in] nodeIndex node index in the mesh to return the number of elements for
  * @return number of elements around a specified node
  */
-size_t ElementTable::numElementsAroundNode(size_t nodeIndex) {
+size_t ElementTable::numElementsAroundNode(size_t nodeIndex) const {
   if (nodeIndex < this->mesh()->numNodes()) {
-    return this->m_elementTable[this->mesh()->node(nodeIndex)].size();
+    return this->m_elementTable[nodeIndex].size();
   } else {
     adcircmodules_throw_exception("Out of bounds node request");
   }
   return adcircmodules_default_value<size_t>();
-}
-
-/**
- * @brief Returns a pointer to the element at a position in the list for the
- * specified node
- * @param[in] n pointer to node
- * @param[in] listIndex index in list of elements
- * @return pointer to element
- */
-Adcirc::Geometry::Element *ElementTable::elementTable(Adcirc::Geometry::Node *n,
-                                                      size_t listIndex) {
-  if (this->m_elementTable.find(n) != this->m_elementTable.end()) {
-    if (listIndex < this->m_elementTable[n].size()) {
-      return this->m_elementTable[n].at(listIndex);
-    } else {
-      adcircmodules_throw_exception("Out of element table request");
-    }
-  }
-  return nullptr;
 }
 
 /**
@@ -147,11 +137,10 @@ Adcirc::Geometry::Element *ElementTable::elementTable(Adcirc::Geometry::Node *n,
  * @return pointer to element
  */
 Adcirc::Geometry::Element *ElementTable::elementTable(size_t nodeIndex,
-                                                      size_t listIndex) {
+                                                      size_t listIndex) const {
   if (nodeIndex < this->mesh()->numNodes()) {
-    if (listIndex <
-        this->m_elementTable[this->mesh()->node(nodeIndex)].size()) {
-      return this->m_elementTable[this->mesh()->node(nodeIndex)].at(listIndex);
+    if (listIndex < this->m_elementTable[nodeIndex].size()) {
+      return this->m_elementTable[nodeIndex].at(listIndex);
     } else {
       adcircmodules_throw_exception("Out of element table request");
     }
@@ -161,7 +150,56 @@ Adcirc::Geometry::Element *ElementTable::elementTable(size_t nodeIndex,
   return nullptr;
 }
 
-bool ElementTable::initialized() { return this->m_initialized; }
+size_t ElementTable::numNodesAroundNode(size_t nodeIndex) const {
+  if (nodeIndex < m_mesh->numNodes()) {
+    return this->m_nodeTable[nodeIndex].size();
+  }
+  return 0;
+}
+
+Adcirc::Geometry::Node *ElementTable::nodeTable(size_t nodeIndex, size_t listIndex) const {
+  if (nodeIndex < m_mesh->numNodes()) {
+    if (listIndex < m_nodeTable[nodeIndex].size()) return m_nodeTable[nodeIndex][listIndex];
+  }
+  return nullptr;
+}
+
+std::vector<Adcirc::Geometry::Node *> ElementTable::nodeList(size_t nodeIndex) const {
+  if (nodeIndex < m_mesh->numNodes()) {
+    return m_nodeTable[nodeIndex];
+  }
+  return std::vector<Adcirc::Geometry::Node *>();
+}
+
+std::vector<std::vector<size_t>> ElementTable::fullNodeTable() const {
+  std::vector<std::vector<size_t>> t;
+  t.resize(m_mesh->numNodes());
+  for (size_t i = 0; i < m_mesh->numNodes(); ++i) {
+    t[i] = std::vector<size_t>(m_maxNodesAroundNode, 0);
+    for (size_t j = 0; j < m_nodeTable[i].size(); ++j) {
+      t[i][j] = m_mesh->nodeIndexById(m_nodeTable[i][j]->id());
+    }
+  }
+  return t;
+}
+
+std::vector<std::vector<size_t>> ElementTable::fullElementTable() const {
+  std::vector<std::vector<size_t>> t;
+  t.resize(m_mesh->numNodes());
+  for (size_t i = 0; i < m_mesh->numNodes(); ++i) {
+    t[i] = std::vector<size_t>(m_maxElementsAroundNode, 0);
+    for (size_t j = 0; j < m_elementTable[i].size(); ++j) {
+      t[i][j] = m_mesh->nodeIndexById(m_elementTable[i][j]->id());
+    }
+  }
+  return t;
+}
+
+size_t ElementTable::maxElementsAroundNode() const { return m_maxElementsAroundNode; }
+
+size_t ElementTable::maxNodesAroundNode() const { return m_maxNodesAroundNode; }
+
+bool ElementTable::initialized() const { return this->m_initialized; }
 
 }  // namespace Geometry
 }  // namespace Adcirc

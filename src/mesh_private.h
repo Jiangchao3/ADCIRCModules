@@ -141,8 +141,8 @@ class MeshPrivate {
   Adcirc::Geometry::Node *nodeById(size_t id);
   Adcirc::Geometry::Element *elementById(size_t id);
 
-  size_t nodeIndexById(size_t id);
-  size_t elementIndexById(size_t id);
+  size_t nodeIndexById(size_t id) const;
+  size_t elementIndexById(size_t id) const;
 
   void resizeMesh(size_t numNodes, size_t numElements, size_t numOpenBoundaries,
                   size_t numLandBoundaries);
@@ -174,6 +174,15 @@ class MeshPrivate {
   Adcirc::Geometry::Element *elementTable(size_t nodeIndex, size_t listIndex);
   std::vector<Adcirc::Geometry::Element *> elementsAroundNode(
       Adcirc::Geometry::Node *n);
+
+  size_t numNodeNeighbors(size_t nodeIndex) const;
+  std::vector<Adcirc::Geometry::Node *> neighbors(size_t nodeIndex) const;
+
+  std::vector<std::vector<size_t>> fullNodeTable() const;
+  std::vector<std::vector<size_t>> fullElementTable() const;
+
+  size_t maxNodeNeighbors() const;
+  size_t maxElementNeighbors() const;
 
   std::string hash(bool force = false);
 

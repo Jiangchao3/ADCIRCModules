@@ -21,7 +21,6 @@
 
 #include <memory>
 #include <vector>
-#include "adcmap.h"
 #include "element.h"
 namespace Adcirc {
 
@@ -48,31 +47,38 @@ class Mesh;
 class ElementTable {
  public:
   ElementTable();
-  ElementTable(Adcirc::Private::MeshPrivate *mesh);
-  ElementTable(std::unique_ptr<Adcirc::Private::MeshPrivate> *mesh);
-  ElementTable(Adcirc::Geometry::Mesh *mesh);
+  explicit ElementTable(Adcirc::Private::MeshPrivate *mesh);
+  explicit ElementTable(std::unique_ptr<Adcirc::Private::MeshPrivate> *mesh);
+  explicit ElementTable(Adcirc::Geometry::Mesh *mesh);
 
-  std::vector<Adcirc::Geometry::Element *> elementList(
-      Adcirc::Geometry::Node *n);
+  size_t numNodesAroundNode(size_t nodeIndex) const;
+  Adcirc::Geometry::Node *nodeTable(size_t nodeIndex, size_t listIndex) const;
+  std::vector<Adcirc::Geometry::Node *> nodeList(size_t nodeIndex) const;
+  std::vector<std::vector<size_t>> fullNodeTable() const;
 
-  size_t numElementsAroundNode(Adcirc::Geometry::Node *n);
-  size_t numElementsAroundNode(size_t nodeIndex);
-  Adcirc::Geometry::Element *elementTable(Adcirc::Geometry::Node *n,
-                                          size_t listIndex);
-  Adcirc::Geometry::Element *elementTable(size_t nodeIndex, size_t listIndex);
+  size_t numElementsAroundNode(size_t nodeIndex) const;
+  Adcirc::Geometry::Element *elementTable(size_t nodeIndex, size_t listIndex) const;
+  std::vector<Adcirc::Geometry::Element *> elementList(size_t nodeIndex) const;
+  std::vector<std::vector<size_t>> fullElementTable() const;
+
+  size_t maxElementsAroundNode() const;
+  size_t maxNodesAroundNode() const;
 
   void build();
 
-  bool initialized();
+  bool initialized() const;
 
   Adcirc::Private::MeshPrivate *mesh() const;
   void setMesh(Adcirc::Private::MeshPrivate *mesh);
 
  private:
-  Adcirc::adcmap<Adcirc::Geometry::Node *, std::vector<Adcirc::Geometry::Element *>>
-      m_elementTable;
+  std::vector<std::vector<Adcirc::Geometry::Element *>> m_elementTable;
+  std::vector<std::vector<Adcirc::Geometry::Node *>> m_nodeTable;
 
   Adcirc::Private::MeshPrivate *m_mesh;
+
+  size_t m_maxElementsAroundNode;
+  size_t m_maxNodesAroundNode;
 
   bool m_initialized;
 };
