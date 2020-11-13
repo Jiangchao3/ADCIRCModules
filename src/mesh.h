@@ -135,7 +135,6 @@ class Mesh {
   int ADCIRCMODULES_EXPORT projection();
   void ADCIRCMODULES_EXPORT defineProjection(int epsg);
   void ADCIRCMODULES_EXPORT reproject(int epsg);
-  bool ADCIRCMODULES_EXPORT isLatLon();
 
   void ADCIRCMODULES_EXPORT cpp(double lambda, double phi);
   void ADCIRCMODULES_EXPORT inverseCpp(double lambda, double phi);

@@ -10,14 +10,12 @@ int Projection::transform(int epsgInput,
                           double x,
                           double y,
                           double &outx,
-                          double &outy,
-                          bool &isLatLon) {
+                          double &outy) {
   std::vector<double> xv = {x};
   std::vector<double> yv = {y};
   std::vector<double> outxv;
   std::vector<double> outyv;
-  int ierr = Projection::transform(epsgInput, epsgOutput, xv, yv, outxv, outyv, isLatLon);
-  if (ierr != 0)return ierr;
+  if (Projection::transform(epsgInput, epsgOutput, xv, yv, outxv, outyv))return 1;
   outx = outxv[0];
   outy = outyv[0];
   return 0;
@@ -28,8 +26,7 @@ int Projection::transform(int epsgInput,
                           const std::vector<double> &x,
                           const std::vector<double> &y,
                           std::vector<double> &outx,
-                          std::vector<double> &outy,
-                          bool &isLatLon) {
+                          std::vector<double> &outy) {
   if (x.size() != y.size()) return 1;
   if (x.empty())return 1;
 
@@ -46,21 +43,19 @@ int Projection::transform(int epsgInput,
   outx.reserve(x.size());
   outy.reserve(y.size());
 
-  bool inlatlon = proj_angular_input(pj2, PJ_INV);
-  bool outlatlon = proj_angular_input(pj2, PJ_FWD);
-
   for (size_t i = 0; i < x.size(); ++i) {
     PJ_COORD cin;
-    if (inlatlon) {
+    if (proj_angular_input(pj2, PJ_INV)) {
       cin.lp.lam = Adcirc::Constants::toRadians(x[i]);
       cin.lp.phi = Adcirc::Constants::toRadians(y[i]);
     } else {
       cin.xy.x = x[i];
       cin.xy.y = y[i];
     }
+
     PJ_COORD cout = proj_trans(pj2, PJ_FWD, cin);
 
-    if (outlatlon) {
+    if (proj_angular_output(pj2, PJ_FWD)) {
       outx.push_back(proj_todeg(cout.lp.lam));
       outy.push_back(proj_todeg(cout.lp.phi));
     } else {
@@ -68,18 +63,8 @@ int Projection::transform(int epsgInput,
       outy.push_back(cout.xy.y);
     }
   }
-  isLatLon = outlatlon;
   proj_destroy(pj2);
   return 0;
-}
-
-bool Projection::isLatLon(const int epsg) {
-  std::string p = "EPSG:" + std::to_string(epsg);
-  PJ *pj = proj_create(PJ_DEFAULT_CTX, p.c_str());
-  if (pj == nullptr)return false;
-  bool b = proj_angular_input(pj, PJ_INV);
-  proj_destroy(pj);
-  return b;
 }
 
 std::string Projection::projVersion() {

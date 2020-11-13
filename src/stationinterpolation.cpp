@@ -102,11 +102,10 @@ void StationInterpolation::generateInterpolationWeights(
     double y1 = stn->station(i)->latitude();
     double x2 = 0;
     double y2 = 0;
-	bool latlon;
 
     if (this->m_options.epsgStation() != this->m_options.epsgGlobal()) {
-		Projection::transform(this->m_options.epsgStation(), this->m_options.epsgGlobal(),
-                  x1, y1, x2, y2,latlon);
+      Projection::transform(this->m_options.epsgStation(), this->m_options.epsgGlobal(),
+                            x1, y1, x2, y2);
     } else {
       x2 = x1;
       y2 = y1;
@@ -129,7 +128,7 @@ void StationInterpolation::generateInterpolationWeights(
 
   Adcirc::Logging::log(
       boost::str(boost::format("%i of %i stations found inside the mesh") %
-                 nFound % stn->nstations()),
+          nFound % stn->nstations()),
       "[INFO]: ");
   if (nFound == 0) {
     Adcirc::Logging::logError(
@@ -142,7 +141,7 @@ void StationInterpolation::generateInterpolationWeights(
 void StationInterpolation::allocateStationArrays() {
   for (size_t i = 0; i < this->m_options.stations()->nstations(); ++i) {
     this->m_options.station(i)->reserve(this->m_options.endsnap() -
-                                        this->m_options.startsnap());
+        this->m_options.startsnap());
   }
 }
 
@@ -155,9 +154,9 @@ void StationInterpolation::reprojectStationOutput() {
       double y1 = output->station(i)->latitude();
       double x2 = 0;
       double y2 = 0;
-	  bool latlon;
+
       e.transform(this->m_options.epsgStation(), this->m_options.epsgOutput(),
-                  x1, y1, x2, y2,latlon);
+                  x1, y1, x2, y2);
       output->station(i)->setLongitude(x2);
       output->station(i)->setLatitude(y2);
     }
@@ -192,8 +191,8 @@ void StationInterpolation::interpolateTimeSnapToStations(
         if (this->m_options.hasPositiveDirection()) {
           stationData->station(j)->setNext(
               d, this->interpScalar(
-                     globalFile, this->m_weights[j],
-                     this->m_options.station(j)->positiveDirection()));
+                  globalFile, this->m_weights[j],
+                  this->m_options.station(j)->positiveDirection()));
         } else {
           stationData->station(j)->setNext(
               d, this->interpScalar(globalFile, this->m_weights[j]));
@@ -323,7 +322,7 @@ double StationInterpolation::interpScalarFromVector(
   if (this->m_options.magnitude() && equalTo(positive_direction, -9999.0)) {
     return this->interpScalarFromVectorWithoutFlowDirection(data, w);
   } else if (this->m_options.magnitude() &&
-             !equalTo(positive_direction, -9999.0)) {
+      !equalTo(positive_direction, -9999.0)) {
     return this->interpScalarFromVectorWithFlowDirection(data, w,
                                                          positive_direction);
   } else if (this->m_options.direction()) {
@@ -350,25 +349,25 @@ double StationInterpolation::interpolateDryValues(double v1, double w1,
       w2 = w2 * f;
       w3 = w3 * f;
     } else if (!equalTo(v1, defaultVal) && equalTo(v2, defaultVal) &&
-               !equalTo(v3, defaultVal)) {
+        !equalTo(v3, defaultVal)) {
       double f = 1.0 / (w1 + w3);
       w1 = w1 * f;
       w2 = 0.0;
       w3 = w3 * f;
     } else if (!equalTo(v1, defaultVal) && !equalTo(v2, defaultVal) &&
-               equalTo(v3, defaultVal)) {
+        equalTo(v3, defaultVal)) {
       double f = 1.0 / (w1 + w2);
       w1 = w1 * f;
       w2 = w2 * f;
       w3 = 0.0;
     } else if (equalTo(v1, defaultVal) && equalTo(v2, defaultVal) &&
-               !equalTo(v3, defaultVal)) {
+        !equalTo(v3, defaultVal)) {
       return v3;
     } else if (equalTo(v1, defaultVal) && !equalTo(v2, defaultVal) &&
-               equalTo(v3, defaultVal)) {
+        equalTo(v3, defaultVal)) {
       return v2;
     } else if (!equalTo(v1, defaultVal) && equalTo(v2, defaultVal) &&
-               equalTo(v3, defaultVal)) {
+        equalTo(v3, defaultVal)) {
       return v1;
     } else {
       return defaultVal;

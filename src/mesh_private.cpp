@@ -1133,8 +1133,13 @@ Boundary MeshPrivate::landBoundaryC(size_t index) const {
  */
 void MeshPrivate::defineProjection(int epsg) {
   this->m_epsg = epsg;
-  this->m_isLatLon = Projection::isLatLon(epsg);
-  if (m_isLatLon)std::cout << "LATLON!" << std::endl;
+  m_isLatLon = true;
+  for (auto &n : m_nodes) {
+    if (std::abs(n.x()) > 360.0) {
+      m_isLatLon = false;
+      break;
+    }
+  }
   return;
 }
 
@@ -1164,9 +1169,7 @@ void MeshPrivate::reproject(int epsg) {
     inY.push_back(n.y());
   }
 
-  bool latlon;
-  int ierr =
-      Projection::transform(this->projection(), epsg, inX, inY, outX, outY, latlon);
+  int ierr = Projection::transform(this->projection(), epsg, inX, inY, outX, outY);
 
   if (ierr != 0) {
     adcircmodules_throw_exception("Mesh: Proj4 library error");
@@ -1178,9 +1181,14 @@ void MeshPrivate::reproject(int epsg) {
   }
 
   this->defineProjection(epsg);
-  m_isLatLon = latlon;
 
-  return;
+  m_isLatLon = true;
+  for (auto &n : m_nodes) {
+    if (std::abs(n.x()) > 360.0) {
+      m_isLatLon = false;
+      break;
+    }
+  }
 }
 
 /**

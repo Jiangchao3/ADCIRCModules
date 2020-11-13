@@ -74,8 +74,7 @@ void Hmdf::reproject(int epsg) {
     double x = m.longitude();
     double y = m.latitude();
     double outx, outy;
-	bool latlon;
-	Projection::transform(this->m_epsg, epsg, x, y, outx, outy,latlon);
+	Projection::transform(this->m_epsg, epsg, x, y, outx, outy);
     m.setLongitude(outx);
     m.setLatitude(outy);
   }

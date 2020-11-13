@@ -253,12 +253,6 @@ void Mesh::defineProjection(int epsg) {
 void Mesh::reproject(int epsg) { this->m_impl->reproject(epsg); }
 
 /**
- * @brief Returns true if the mesh is in a geographic projection
- * @return boolean value for mesh projection type
- */
-bool Mesh::isLatLon() { return this->m_impl->isLatLon(); }
-
-/**
  * @brief Convertes mesh to the carte parallelogrammatique projection
  * @param[in] lambda  lambda used in cpp projection
  * @param[in] phi phi used in cpp projection
