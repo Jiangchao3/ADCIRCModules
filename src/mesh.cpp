@@ -239,12 +239,11 @@ int Mesh::projection() { return this->m_impl->projection(); }
  * @brief Sets the mesh projection using an EPSG code. Note this does not
  * reproject the mesh.
  * @param[in] epsg EPSG code for the mesh
- * @param[in] isLatLon defines if the current projection is a lat/lon
  * projection. This helps define the significant digits when writing the mesh
  * file
  */
-void Mesh::defineProjection(int epsg, bool isLatLon) {
-  this->m_impl->defineProjection(epsg, isLatLon);
+void Mesh::defineProjection(int epsg) {
+  this->m_impl->defineProjection(epsg);
 }
 
 /**

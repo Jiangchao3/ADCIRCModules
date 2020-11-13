@@ -38,7 +38,7 @@ int main() {
 
   std::unique_ptr<Mesh> m(new Mesh("test_files/ms-riv.grd"));
   m->read();
-  m->defineProjection(4326, true);
+  m->defineProjection(4326);
   m->reproject(26915);
 
   Adcirc::Multithreading::disable();

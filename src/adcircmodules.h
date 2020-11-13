@@ -22,7 +22,7 @@
 #include "config.h"
 #include "constants.h"
 #include "default_values.h"
-#include "ezproj.h"
+#include "projection.h"
 #include "fileio.h"
 #include "filetypes.h"
 #include "griddata.h"

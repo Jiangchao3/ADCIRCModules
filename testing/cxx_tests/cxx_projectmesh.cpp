@@ -24,21 +24,17 @@
 int main() {
   using namespace Adcirc::Geometry;
 
-  Ezproj p;
-  std::cout << "PROJ Version: " << p.projVersion() << std::endl;
+  std::cout << "PROJ Version: " << Projection::projVersion() << std::endl;
 
   std::unique_ptr<Mesh> mesh(new Mesh("test_files/ms-riv.grd"));
   mesh->read();
   double oldx = mesh->node(0)->x();
   double oldy = mesh->node(0)->y();
-  mesh->defineProjection(4326,true);
+  mesh->defineProjection(4326);
   
-  std::cout << "Transforming to " << p.description(26915) << "...\n";
-
   mesh->reproject(26915);
   double newx = mesh->node(0)->x();
   double newy = mesh->node(0)->y();
-
   char buffer1[50], buffer2[50], buffer3[50], buffer4[50];
   sprintf(buffer1, "Original X coordinate: %f", oldx);
   std::cout << buffer1 << std::endl;
@@ -48,10 +44,10 @@ int main() {
   std::cout << buffer3 << std::endl;
   sprintf(buffer4, "Projected Y coordinate: %f", newy);
   std::cout << buffer4 << std::endl;
-  if (std::abs(newx - 753922.922116) > 0.000001 ||
-      std::abs(newy - 3328065.712818) > 0.000001) {
-    std::cout << "Expected: 753922.922116, 3328065.712818" << std::endl;
-    printf("Got: %14.2f, %14.2f\n", newx, newy);
+  if (std::abs(newx - 753922.922118) > 0.000001 ||
+      std::abs(newy - 3328065.712727) > 0.000001) {
+    std::cout << "Expected: 753922.922118, 3328065.712727" << std::endl;
+    printf("Got: %18.6f, %18.6f\n", newx, newy);
     return 1;
   }
 

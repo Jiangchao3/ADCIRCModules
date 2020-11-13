@@ -31,7 +31,7 @@
 #include "boost/algorithm/string/replace.hpp"
 #include "boost/format.hpp"
 #include "cdate.h"
-#include "ezproj.h"
+#include "projection.h"
 #include "fileio.h"
 #include "formatting.h"
 #include "logging.h"
@@ -70,14 +70,12 @@ void Hmdf::reproject(int epsg) {
         "Error: Must define projection before reprojecting");
   }
 
-  Ezproj p;
-
   for (auto &m : this->m_station) {
     double x = m.longitude();
     double y = m.latitude();
     double outx, outy;
-    bool islatlon;
-    p.transform(this->m_epsg, epsg, x, y, outx, outy, islatlon);
+	bool latlon;
+	Projection::transform(this->m_epsg, epsg, x, y, outx, outy,latlon);
     m.setLongitude(outx);
     m.setLatitude(outy);
   }

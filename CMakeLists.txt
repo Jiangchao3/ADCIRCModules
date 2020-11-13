@@ -351,6 +351,7 @@ else(ENABLE_GDAL)
   set(GDAL_FOUND FALSE)
   set(ENABLE_GDAL OFF)
 endif(ENABLE_GDAL)
+find_package(PROJ4 REQUIRED)
 # ##############################################################################
 
 # ##############################################################################
@@ -359,10 +360,6 @@ endif(ENABLE_GDAL)
 # ##############################################################################
 # ##############################################################################
 
-# ##############################################################################
-# EzProj Library
-# ##############################################################################
-add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/ezproj EXCLUDE_FROM_ALL)
 # ##############################################################################
 
 # ##############################################################################
@@ -418,7 +415,8 @@ set(ADCIRCMODULES_SOURCES
     ${CMAKE_SOURCE_DIR}/src/kdtree_private.cpp
     ${CMAKE_SOURCE_DIR}/src/harmonicsoutput_private.cpp
     ${CMAKE_SOURCE_DIR}/src/harmonicsrecord_private.cpp
-    ${CMAKE_SOURCE_DIR}/src/nodalattributes_private.cpp)
+    ${CMAKE_SOURCE_DIR}/src/nodalattributes_private.cpp
+	${CMAKE_SOURCE_DIR}/src/projection.cpp )
 
 if(GDAL_FOUND)
   set(ADCIRCMODULES_SOURCES
@@ -437,7 +435,6 @@ add_library(adcircmodules SHARED $<TARGET_OBJECTS:adcircmodules_objectlib>)
 
 set_property( TARGET adcircmodules_objectlib PROPERTY POSITION_INDEPENDENT_CODE 1)
 
-target_link_libraries(adcircmodules_objectlib adcircmodules_interface)
 target_link_libraries(adcircmodules_static adcircmodules_interface)
 target_link_libraries(adcircmodules adcircmodules_interface)
 
@@ -474,8 +471,8 @@ set(HEADER_LIST
     ${CMAKE_SOURCE_DIR}/src/constants.h
     ${CMAKE_SOURCE_DIR}/src/kdtree.h
     ${CMAKE_SOURCE_DIR}/src/default_values.h
-    ${CMAKE_SOURCE_DIR}/src/cdate.h
-    ${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src/ezproj.h)
+	${CMAKE_SOURCE_DIR}/src/cdate.h
+	${CMAKE_SOURCE_DIR}/src/projection.h)
 
 if(GDAL_FOUND)
   target_compile_definitions(adcircmodules_objectlib PRIVATE "USE_GDAL")
@@ -485,19 +482,32 @@ if(GDAL_FOUND)
   set(HEADER_LIST ${HEADER_LIST} ${CMAKE_SOURCE_DIR}/src/rasterdata.h
                   ${CMAKE_SOURCE_DIR}/src/griddata.h)
 endif(GDAL_FOUND)
+
 target_include_directories(
   adcircmodules_interface
   INTERFACE ${CMAKE_SOURCE_DIR}/src
-            ${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src
             ${CMAKE_SOURCE_DIR}/thirdparty/shapelib
             ${CMAKE_SOURCE_DIR}/thirdparty/abseil
             ${CMAKE_SOURCE_DIR}/thirdparty/date/include/date
             ${CMAKE_SOURCE_DIR}/thirdparty/nanoflann/include
             ${CMAKE_SOURCE_DIR}/thirdparty/cxxopts
+			${PROJ_INCLUDE_DIR}
             ${Boost_INCLUDE_DIRS}
             ${NETCDF_INCLUDE_DIR})
 
-add_dependencies(adcircmodules_interface ezproj shapelib)
+target_include_directories(
+  adcircmodules_objectlib
+  PRIVATE ${CMAKE_SOURCE_DIR}/src
+          ${CMAKE_SOURCE_DIR}/thirdparty/shapelib
+          ${CMAKE_SOURCE_DIR}/thirdparty/abseil
+          ${CMAKE_SOURCE_DIR}/thirdparty/date/include/date
+          ${CMAKE_SOURCE_DIR}/thirdparty/nanoflann/include
+          ${CMAKE_SOURCE_DIR}/thirdparty/cxxopts
+		  ${PROJ_INCLUDE_DIR}
+          ${Boost_INCLUDE_DIRS}
+          ${NETCDF_INCLUDE_DIR})
+
+add_dependencies(adcircmodules_interface shapelib)
 
 target_compile_definitions(adcircmodules_objectlib PRIVATE GIT_VERSION="${GIT_VERSION}")
 target_compile_definitions(adcircmodules_objectlib PRIVATE ADCIRCMODULES_LIBRARY)
@@ -535,13 +545,13 @@ set_target_properties(adcircmodules_objectlib PROPERTIES CMAKE_CXX_VISIBILITY_PR
                                                hidden)
 set_target_properties(adcircmodules_objectlib PROPERTIES CMAKE_CXX_INLINES_HIDDEN YES)
 
-target_link_libraries(adcircmodules_interface INTERFACE ezproj shapelib)
+target_link_libraries(adcircmodules_interface INTERFACE shapelib)
 
 if(WIN32)
   link_directories(${CMAKE_SOURCE_DIR}/thirdparty/netcdf/libs_vc64)
   target_link_libraries(adcircmodules_interface INTERFACE netcdf hdf5 hdf5_hl)
 else(WIN32)
-  target_link_libraries(adcircmodules_interface INTERFACE ${NETCDF_LIBRARIES})
+  target_link_libraries(adcircmodules_interface INTERFACE ${NETCDF_LIBRARIES} ${PROJ_LIBRARY})
 endif(WIN32)
 
 if(OpenSSL_FOUND)
@@ -615,7 +625,7 @@ if(SWIG_FOUND
       COMMAND
         ${SWIG_EXECUTABLE} -outdir ${CMAKE_BINARY_DIR} -c++ -python
         ${PYTHONFLAG} -I${CMAKE_SOURCE_DIR}/src
-        -I${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src i -I${PYTHON_INCLUDE_PATH}
+        -I${PYTHON_INCLUDE_PATH}
         ${SWIG_GDAL_FLAG} -o
         ${CMAKE_BINARY_DIR}/CMakeFiles/python_adcirc_wrap.cxx.1
         ${CMAKE_SOURCE_DIR}/swig/adcirc.i
@@ -633,7 +643,7 @@ if(SWIG_FOUND
       COMMAND
         ${SWIG_EXECUTABLE} -outdir ${CMAKE_BINARY_DIR} -c++ -python
         ${PYTHONFLAG} -I${CMAKE_SOURCE_DIR}/src
-        -I${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src -I${PYTHON_INCLUDE_PATH}
+        -I${PYTHON_INCLUDE_PATH}
         ${SWIG_GDAL_FLAG} -o
         ${CMAKE_BINARY_DIR}/CMakeFiles/python_adcirc_wrap.cxx
         ${CMAKE_SOURCE_DIR}/swig/adcirc.i
@@ -644,14 +654,13 @@ if(SWIG_FOUND
   add_library(pyadcircmodules SHARED
               ${CMAKE_BINARY_DIR}/CMakeFiles/python_adcirc_wrap.cxx)
   target_include_directories(
-    pyadcircmodules PRIVATE ${PYTHON_INCLUDE_PATH} ${CMAKE_SOURCE_DIR}/src
-                     ${CMAKE_SOURCE_DIR}/thirdparty/ezproj/src)
+    pyadcircmodules PRIVATE ${PYTHON_INCLUDE_PATH} ${CMAKE_SOURCE_DIR}/src)
   #target_link_libraries(pyadcircmodules adcircmodules_static ${PYTHON_LIBRARY})
-  target_link_libraries(pyadcircmodules adcircmodules_static )
+  target_link_libraries(pyadcircmodules adcircmodules_static ${PYTHON_LIBRARY} )
   if(OpenSSL_FOUND)
     target_include_directories(pyadcircmodules PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_link_libraries(pyadcircmodules ${OPENSSL_CRYPTO_LIBRARY}
-                          ${OPENSSL_SSL_LIBRARY})
+                          ${OPENSSL_SSL_LIBRARY} )
   endif(OpenSSL_FOUND)
   set_target_properties(pyadcircmodules PROPERTIES PREFIX "_")
   set_target_properties(pyadcircmodules PROPERTIES LIBRARY_OUTPUT_NAME "adcircmodules")

@@ -21,7 +21,7 @@
 #include "boost/format.hpp"
 #include "boost/progress.hpp"
 #include "constants.h"
-#include "ezproj.h"
+#include "projection.h"
 #include "fileio.h"
 #include "fpcompare.h"
 #include "logging.h"
@@ -92,7 +92,6 @@ void StationInterpolation::generateInterpolationWeights(
     Adcirc::Geometry::Mesh &m) {
   m.buildElementalSearchTree();
   size_t nFound = 0;
-  Ezproj e;
   Hmdf *stn = this->m_options.stations();
 
   this->m_weights.resize(stn->nstations());
@@ -103,11 +102,11 @@ void StationInterpolation::generateInterpolationWeights(
     double y1 = stn->station(i)->latitude();
     double x2 = 0;
     double y2 = 0;
+	bool latlon;
 
     if (this->m_options.epsgStation() != this->m_options.epsgGlobal()) {
-      bool latlon = false;
-      e.transform(this->m_options.epsgStation(), this->m_options.epsgGlobal(),
-                  x1, y1, x2, y2, latlon);
+		Projection::transform(this->m_options.epsgStation(), this->m_options.epsgGlobal(),
+                  x1, y1, x2, y2,latlon);
     } else {
       x2 = x1;
       y2 = y1;
@@ -149,16 +148,16 @@ void StationInterpolation::allocateStationArrays() {
 
 void StationInterpolation::reprojectStationOutput() {
   if (this->m_options.epsgStation() != this->m_options.epsgOutput()) {
-    Ezproj e;
+    Projection e;
     Hmdf *output = this->m_options.stations();
     for (size_t i = 0; i < output->nstations(); ++i) {
       double x1 = output->station(i)->longitude();
       double y1 = output->station(i)->latitude();
       double x2 = 0;
       double y2 = 0;
-      bool latlon = false;
+	  bool latlon;
       e.transform(this->m_options.epsgStation(), this->m_options.epsgOutput(),
-                  x1, y1, x2, y2, latlon);
+                  x1, y1, x2, y2,latlon);
       output->station(i)->setLongitude(x2);
       output->station(i)->setLatitude(y2);
     }

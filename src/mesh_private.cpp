@@ -27,7 +27,7 @@
 #include "boost/format.hpp"
 #include "default_values.h"
 #include "elementtable.h"
-#include "ezproj.h"
+#include "projection.h"
 #include "fileio.h"
 #include "filetypes.h"
 #include "fpcompare.h"
@@ -116,7 +116,7 @@ void MeshPrivate::meshCopier(MeshPrivate *a, const MeshPrivate *b) {
  * @brief Initialization routine called by all constructors
  */
 void MeshPrivate::_init() {
-  if (this->m_epsg == -1) this->defineProjection(4326, true);
+  if (this->m_epsg == -1) this->defineProjection(4326);
   this->m_nodalSearchTree = nullptr;
   this->m_elementalSearchTree = nullptr;
   this->m_nodeOrderingLogical = true;
@@ -247,20 +247,15 @@ void MeshPrivate::read(MeshFormat format) {
   this->_init();
 
   switch (fmt) {
-    case MeshAdcirc:
-      this->readAdcircMeshAscii();
+    case MeshAdcirc:this->readAdcircMeshAscii();
       break;
-    case MeshAdcircNetcdf:
-      this->readAdcircMeshNetcdf();
+    case MeshAdcircNetcdf:this->readAdcircMeshNetcdf();
       break;
-    case Mesh2DM:
-      this->read2dmMesh();
+    case Mesh2DM:this->read2dmMesh();
       break;
-    case MeshDFlow:
-      this->readDflowMesh();
+    case MeshDFlow:this->readDflowMesh();
       break;
-    default:
-      adcircmodules_throw_exception("Invalid mesh format selected.");
+    default:adcircmodules_throw_exception("Invalid mesh format selected.");
       break;
   }
   return;
@@ -590,8 +585,8 @@ void MeshPrivate::read2dmElements(std::vector<std::string> &elements) {
         }
       } else {
         adcircmodules_throw_exception("Too many nodes (" +
-                                      std::to_string(n.size()) +
-                                      ") detected in element.");
+            std::to_string(n.size()) +
+            ") detected in element.");
       }
     } else {
       adcircmodules_throw_exception("Error reading 2dm element");
@@ -870,7 +865,7 @@ void MeshPrivate::readAdcircLandBoundaries(std::fstream &fid) {
 
       } else if (code == 4 || code == 24) {
         if (!FileIO::AdcircIO::splitStringBoundary24Format(
-                tempLine, n1, n2, crest, subcritical, supercritical)) {
+            tempLine, n1, n2, crest, subcritical, supercritical)) {
           fid.close();
           adcircmodules_throw_exception("Error reading boundaries");
         }
@@ -889,8 +884,8 @@ void MeshPrivate::readAdcircLandBoundaries(std::fstream &fid) {
 
       } else if (code == 5 || code == 25) {
         if (!FileIO::AdcircIO::splitStringBoundary25Format(
-                tempLine, n1, n2, crest, subcritical, supercritical, pipeheight,
-                pipecoef, pipediam)) {
+            tempLine, n1, n2, crest, subcritical, supercritical, pipeheight,
+            pipecoef, pipediam)) {
           fid.close();
           adcircmodules_throw_exception("Error reading boundaries");
         }
@@ -987,7 +982,7 @@ Node *MeshPrivate::node(size_t index) {
     return &this->m_nodes[index];
   } else {
     adcircmodules_throw_exception("Mesh: Node index " + std::to_string(index) +
-                                  " out of bounds");
+        " out of bounds");
     return nullptr;
   }
 }
@@ -1002,7 +997,7 @@ Node MeshPrivate::nodeC(size_t index) const {
     return this->m_nodes[index];
   } else {
     adcircmodules_throw_exception("Mesh: Node index " + std::to_string(index) +
-                                  " out of bounds");
+        " out of bounds");
     return Node();
   }
 }
@@ -1048,7 +1043,7 @@ Node *MeshPrivate::nodeById(size_t id) {
       return &this->m_nodes[id - 1];
     } else {
       adcircmodules_throw_exception("Mesh: Node id " + std::to_string(id) +
-                                    " not found");
+          " not found");
       return nullptr;
     }
   } else {
@@ -1134,12 +1129,12 @@ Boundary MeshPrivate::landBoundaryC(size_t index) const {
  * @brief Sets the mesh projection using an EPSG code. Note this does not
  * reproject the mesh.
  * @param epsg EPSG code for the mesh
- * @param isLatLon defines if the current projection is a lat/lon projection.
  * This helps define the significant digits when writing the mesh file
  */
-void MeshPrivate::defineProjection(int epsg, bool isLatLon) {
+void MeshPrivate::defineProjection(int epsg) {
   this->m_epsg = epsg;
-  this->m_isLatLon = isLatLon;
+  this->m_isLatLon = Projection::isLatLon(epsg);
+  if (m_isLatLon)std::cout << "LATLON!" << std::endl;
   return;
 }
 
@@ -1160,29 +1155,30 @@ bool MeshPrivate::isLatLon() { return this->m_isLatLon; }
  * @param epsg EPSG coordinate system to convert the mesh into
  */
 void MeshPrivate::reproject(int epsg) {
-  Ezproj proj;
-  bool isLatLon;
-  std::vector<Point> inPoint, outPoint;
-  inPoint.reserve(this->numNodes());
-  outPoint.resize(this->numNodes());
+  std::vector<double> inX, inY, outX, outY;
+  inX.reserve(this->numNodes());
+  inY.reserve(this->numNodes());
 
   for (const auto &n : this->m_nodes) {
-    inPoint.push_back(Point(n.x(), n.y()));
+    inX.push_back(n.x());
+    inY.push_back(n.y());
   }
 
+  bool latlon;
   int ierr =
-      proj.transform(this->projection(), epsg, inPoint, outPoint, isLatLon);
+      Projection::transform(this->projection(), epsg, inX, inY, outX, outY, latlon);
 
-  if (ierr != Ezproj::NoError) {
+  if (ierr != 0) {
     adcircmodules_throw_exception("Mesh: Proj4 library error");
   }
 
   for (size_t i = 0; i < this->numNodes(); ++i) {
-    this->node(i)->setX(outPoint[i].first);
-    this->node(i)->setY(outPoint[i].second);
+    this->node(i)->setX(outX[i]);
+    this->node(i)->setY(outY[i]);
   }
 
-  this->defineProjection(epsg, isLatLon);
+  this->defineProjection(epsg);
+  m_isLatLon = latlon;
 
   return;
 }
@@ -1924,17 +1920,13 @@ void MeshPrivate::write(const std::string &outputFile, MeshFormat format) {
   }
 
   switch (fmt) {
-    case MeshAdcirc:
-      this->writeAdcircMesh(outputFile);
+    case MeshAdcirc:this->writeAdcircMesh(outputFile);
       break;
-    case Mesh2DM:
-      this->write2dmMesh(outputFile);
+    case Mesh2DM:this->write2dmMesh(outputFile);
       break;
-    case MeshDFlow:
-      this->writeDflowMesh(outputFile);
+    case MeshDFlow:this->writeDflowMesh(outputFile);
       break;
-    default:
-      adcircmodules_throw_exception("No valid mesh format specified.");
+    default:adcircmodules_throw_exception("No valid mesh format specified.");
       break;
   }
 }
@@ -1951,7 +1943,7 @@ void MeshPrivate::writeAdcircMesh(const std::string &filename) {
   //...Write the header
   outputFile << this->meshHeaderString() << "\n";
   std::string tempString = boost::str(boost::format("%11i %11i") %
-                                      this->numElements() % this->numNodes());
+      this->numElements() % this->numNodes());
   outputFile << tempString << "\n";
 
   //...Write the mesh nodes
@@ -2350,11 +2342,10 @@ std::vector<std::vector<size_t>> MeshPrivate::connectivity() {
  */
 void MeshPrivate::cpp(double lambda, double phi) {
   for (auto &n : this->m_nodes) {
-    Point i(n.x(), n.y());
-    Point o;
-    Ezproj::cpp(lambda, phi, i, o);
-    n.setX(o.first);
-    n.setY(o.second);
+    double xout, yout;
+    Projection::cpp(lambda, phi, n.x(), n.y(), xout, yout);
+    n.setX(xout);
+    n.setY(yout);
   }
   return;
 }
@@ -2364,11 +2355,10 @@ void MeshPrivate::cpp(double lambda, double phi) {
  */
 void MeshPrivate::inverseCpp(double lambda, double phi) {
   for (auto &n : this->m_nodes) {
-    Point i(n.x(), n.y());
-    Point o;
-    Ezproj::inverseCpp(lambda, phi, i, o);
-    n.setX(o.first);
-    n.setY(o.second);
+    double xout, yout;
+    Projection::inverseCpp(lambda, phi, n.x(), n.y(), xout, yout);
+    n.setX(xout);
+    n.setY(yout);
   }
   return;
 }
@@ -2927,9 +2917,9 @@ std::vector<float> MeshPrivate::getRasterValues(
       double v2 = z[n2];
       double v3 = z[n3];
       zv[i] = partialWetting ? MeshPrivate::calculateValueWithPartialWetting(
-                                   v1, v2, v3, nullvalue, weights[i])
+          v1, v2, v3, nullvalue, weights[i])
                              : MeshPrivate::calculateValueWithoutPartialWetting(
-                                   v1, v2, v3, nullvalue, weights[i]);
+              v1, v2, v3, nullvalue, weights[i]);
     }
   }
   return zv;
@@ -2950,7 +2940,7 @@ MeshPrivate::computeRasterInterpolationWeights(
 #ifdef _OPENMP
   std::string parmessage = boost::str(
       boost::format("Using %i threads to compute interpolation weights.") %
-      omp_get_num_procs());
+          omp_get_num_procs());
   Adcirc::Logging::log(parmessage);
 #endif
 
@@ -2984,21 +2974,21 @@ float MeshPrivate::calculateValueWithoutPartialWetting(
     const double v1, const double v2, const double v3, const double nullvalue,
     const std::vector<double> &weight) {
   return FpCompare::equalTo(v1, nullvalue) ||
-                 FpCompare::equalTo(v2, nullvalue) ||
-                 FpCompare::equalTo(v3, nullvalue)
-             ? nullvalue
-             : v1 * weight[0] + v2 * weight[1] + v3 * weight[2];
+      FpCompare::equalTo(v2, nullvalue) ||
+      FpCompare::equalTo(v3, nullvalue)
+         ? nullvalue
+         : v1 * weight[0] + v2 * weight[1] + v3 * weight[2];
 }
 
 float MeshPrivate::calculateValueWithPartialWetting(
     const double v1, const double v2, const double v3, const double nullvalue,
     const std::vector<double> &weight) {
   bool b1 = FpCompare::equalTo(v1, nullvalue) ||
-            FpCompare::equalTo(v1, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v1, adcircmodules_default_value<double>());
   bool b2 = FpCompare::equalTo(v2, nullvalue) ||
-            FpCompare::equalTo(v2, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v2, adcircmodules_default_value<double>());
   bool b3 = FpCompare::equalTo(v3, nullvalue) ||
-            FpCompare::equalTo(v3, adcircmodules_default_value<double>());
+      FpCompare::equalTo(v3, adcircmodules_default_value<double>());
   if (!b1 && !b2 && !b3) {
     return weight[0] * v1 + weight[1] * v2 + weight[2] * v3;
   } else if (b1 && b2 && b3) {

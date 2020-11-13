@@ -133,7 +133,7 @@ class Mesh {
   void ADCIRCMODULES_EXPORT setZ(std::vector<double> z);
 
   int ADCIRCMODULES_EXPORT projection();
-  void ADCIRCMODULES_EXPORT defineProjection(int epsg, bool isLatLon);
+  void ADCIRCMODULES_EXPORT defineProjection(int epsg);
   void ADCIRCMODULES_EXPORT reproject(int epsg);
   bool ADCIRCMODULES_EXPORT isLatLon();
 

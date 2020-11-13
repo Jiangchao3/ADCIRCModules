@@ -91,7 +91,7 @@ class MeshPrivate {
   void setZ(std::vector<double> &z);
 
   int projection();
-  void defineProjection(int epsg, bool isLatLon);
+  void defineProjection(int epsg);
   void reproject(int epsg);
   bool isLatLon();
 
